@@ -378,12 +378,14 @@ function botRespawn(b){b.x=b.hx;b.z=b.hz;b.y=0;b.vx=b.vy=b.vz=0;b.hit=0;b.dead=0
 const live=()=>net.on?[rp]:(botsOn?bots:[]);
 // ===== Multijoueur P2P (PeerJS) : un hôte crée un code, l'ami le saisit =====
 let myName='';try{myName=localStorage.getItem('wd-name')||'';}catch(_){}
-const rp={net:1,x:0,y:0,z:0,vx:0,vy:0,vz:0,hit:0,dead:0,sc:0,g:true,tx:0,ty:0,tz:0,ta:0,a:0,ph:0,ra:0,pt:0,pr:false,p:0,pp:0,u:0,k:0,lt:0,name:'',m:makeBoxer(PAL.bot),tag:null};
+const rp={net:1,x:0,y:0,z:0,vx:0,vy:0,vz:0,hit:0,dead:0,sc:0,g:true,tx:0,ty:0,tz:0,ta:0,a:0,ph:0,ra:0,pt:0,pr:false,p:0,pp:0,u:0,k:0,lt:0,b:0,tn:0,rb:0,rt:0,name:'',m:makeBoxer(PAL.bot),tag:null};
 rp.m.root.visible=false;
+const mkBub=c=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));sp.visible=false;scene.add(sp);return sp;};
+rp.bub=mkBub(bc);rp.tb=mkBub(tc);
 let peer=null,conn=null;
-function mkTag(txt){
+function mkTag(txt,col){
   const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');
-  g.font='700 30px system-ui,Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=6;g.strokeStyle='#000';g.fillStyle='#fff';
+  g.font='700 30px system-ui,Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=6;g.strokeStyle='#000';g.fillStyle=col||'#fff';
   g.strokeText(txt,128,32);g.fillText(txt,128,32);
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));
   sp.scale.set(3,0.75,1);sp.renderOrder=9;scene.add(sp);return sp;
@@ -395,9 +397,11 @@ function setRemote(name,skin,tone){
   rp.name=name;rp.tag=mkTag(name);
 }
 net.send=m=>{if(conn&&conn.open){try{conn.send(m);}catch(_){}}};
-net.hello=()=>net.send({t:'h',n:myName||T.pl,s:skinId,c:tones[skinId]||null});
+let meTag=null,meTagN='';
+function updateMeTag(){const n=myName||T.pl;if(meTag&&n===meTagN)return;if(meTag){scene.remove(meTag);meTag.material.map.dispose();meTag.material.dispose();}meTag=mkTag(n,'#ffd23f');meTagN=n;}
+net.hello=()=>{updateMeTag();net.send({t:'h',n:myName||T.pl,s:skinId,c:tones[skinId]||null});};
 const netStatus=t=>{document.getElementById('netst').textContent=t;};
-function netUi(){const b=document.getElementById('netbtn');b.classList.toggle('on',net.on);b.textContent=net.on?T.nb+' ● '+(net.rtt?Math.round(net.rtt)+'ms':''):T.nb;}
+function netUi(){updateMeTag();const b=document.getElementById('netbtn');b.classList.toggle('on',net.on);b.textContent=net.on?T.nb+' ● '+(net.rtt?Math.round(net.rtt)+'ms':''):T.nb;}
 function startMatch(){clearBlocks();bid=0;spawnT=3;lastPat=-1;respawn();}
 function netReset(){
   const c=conn;conn=null;if(c){try{c.close();}catch(_){}}
@@ -418,7 +422,7 @@ function onNet(m){
     case 'hit':if(deadT<=0&&invT<=0){vx=m.nx*KB_H;vz=m.nz*KB_H;vy=KB_V;kbT=KB_T;dashT=0;punchT=0;grounded=false;ride=null;taunting=false;sfx('hit');}break;
     case 's':{
       rp.tx=m.x;rp.ty=m.y;rp.tz=m.z;rp.ta=m.a;rp.vx=m.vx;rp.vy=m.vy||0;rp.vz=m.vz;rp.lt=performance.now();
-      if(Math.hypot(m.x-rp.x,m.z-rp.z)>4||Math.abs(m.y-rp.y)>4){rp.x=m.x;rp.y=m.y;rp.z=m.z;}rp.u=m.u;rp.k=m.k;rp.p=m.p;
+      if(Math.hypot(m.x-rp.x,m.z-rp.z)>4||Math.abs(m.y-rp.y)>4){rp.x=m.x;rp.y=m.y;rp.z=m.z;}rp.u=m.u;rp.k=m.k;rp.p=m.p;rp.b=m.b;rp.tn=m.tn;
       const d=m.d?1:0;
       if(d&&!rp.dead){burst(rp.x,rp.y+1.1,rp.z,16,SPARK,0.2,11,6);sfx('shock');}
       if(!d&&rp.dead){rp.x=m.x;rp.y=m.y;rp.z=m.z;}
@@ -453,13 +457,18 @@ function joinGame(){
 }
 function renderRemote(dt){
   const r=rp,m=r.m,on=net.on;
-  m.root.visible=on&&!r.dead;if(r.tag)r.tag.visible=on;
+  m.root.visible=on&&!r.dead;if(r.tag)r.tag.visible=on&&!r.dead;if(!on)r.bub.visible=r.tb.visible=false;
   if(!on)return;
   const e=Math.min(0.15,(performance.now()-r.lt)/1000+net.owd),k=1-Math.exp(-22*dt);
   r.x+=(r.tx+r.vx*e-r.x)*k;r.y+=(r.ty+r.vy*e-r.y)*k;r.z+=(r.tz+r.vz*e-r.z)*k;
   r.a+=(((r.ta-r.a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI)*k;
   m.root.position.set(r.x,r.y,r.z);m.root.rotation.y=r.a;
-  if(r.tag)r.tag.position.set(r.x,r.y+2.9,r.z);
+  const ba=1-Math.exp(-16*dt);
+  r.rb+=((r.b&&!r.dead?1:0)-r.rb)*ba;r.rt+=((r.tn&&!r.dead?1:0)-r.rt)*ba;
+  r.bub.visible=r.rb>0.02;r.tb.visible=r.rt>0.02;
+  const bs=r.rb*1.25,ts=r.rt*1.25;r.bub.scale.set(bs,bs,1);r.tb.scale.set(ts,ts,1);
+  r.bub.position.set(r.x,r.y+2.75,r.z);r.tb.position.set(r.x,r.y+2.75,r.z);
+  if(r.tag)r.tag.position.set(r.x,r.y+2.9+1.05*Math.max(r.rb,r.rt),r.z);
   const hs=Math.hypot(r.vx,r.vz),rt=hs>1?Math.min(1,hs/SPEED):0;
   r.ra+=(rt-r.ra)*(1-Math.exp(-12*dt));r.ph+=dt*(6+hs*0.7);
   const sw=r.ra*0.85*Math.sin(r.ph);
@@ -922,6 +931,7 @@ function render(dt){
   tauntS+=((taunting?1:0)-tauntS)*(1-Math.exp(-16*dt));
   if(tauntS>0.02){const tsc=tauntS*1.25;tauntBubble.visible=true;tauntBubble.scale.set(tsc,tsc,1);tauntBubble.position.set(px,py+2.75,pz);}
   else tauntBubble.visible=false;
+  if(meTag){meTag.visible=net.on&&deadT<=0;meTag.position.set(px,py+(bubble.visible||tauntBubble.visible?3.95:2.9),pz);}
 
   // cooldown du bouton PUNCH
   const cdOn=!noCd&&punchCd>0;
@@ -1308,7 +1318,7 @@ $('nhost').addEventListener('click',hostGame);$('njoin').addEventListener('click
 $('nquit').addEventListener('click',()=>{netReset();clearBlocks();spawnT=3;netStatus(T.dc);});
 let tk=0;
 setInterval(()=>{if(!net.on)return;const f=v=>+v.toFixed(2);tk++;
-  net.send({t:'s',x:f(px),y:f(py),z:f(pz),a:f(ang),vx:f(vx),vy:f(vy),vz:f(vz+(ride&&grounded?BSPEED:0)),p:punchT>0?(punchRight?2:1):0,d:deadT>0?1:0,k:kbT>0?1:0,u:(dashUsed&&!grounded&&!taunting)?1:0});
+  net.send({t:'s',x:f(px),y:f(py),z:f(pz),a:f(ang),vx:f(vx),vy:f(vy),vz:f(vz+(ride&&grounded?BSPEED:0)),p:punchT>0?(punchRight?2:1):0,d:deadT>0?1:0,k:kbT>0?1:0,u:(dashUsed&&!grounded&&!taunting)?1:0,b:bubbleT>0?1:0,tn:taunting?1:0});
   if(tk%30===0){net.send({t:'pi',n:performance.now()});if(net.role==='host')net.send({t:'y',b:blocks.map(b=>[b.id,+b.z.toFixed(2)])});}
 },33);}
 respawn();
