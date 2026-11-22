@@ -1,4 +1,4 @@
-"Web Dash" (./logo.png)
+"Web Dash" (logo.png)
 
 
 https://jojoxofc.github.io/webdash/
