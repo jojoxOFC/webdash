@@ -2,6 +2,6 @@
 
 WebDash
 
-🌐 Site web : https://jojoxofc.github.io/webdash/
+https://jojoxofc.github.io/webdash/
 
-💬 Discord : ""Discord" (https://img.shields.io/badge/Discord-Rejoindre-5865F2?logo=discord&logoColor=white)" (https://discord.gg/EdUCjVHZfd)
+https://discord.gg/EdUCjVHZfd
