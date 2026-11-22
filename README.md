@@ -1,6 +1,13 @@
-"Web Dash" (logo.png)
+![Web Dash](./logo.png)
 
+Web Dash
+🌐 Site officiel
 
-https://jojoxofc.github.io/webdash/
+💬 [![Discord](https://img.shields.io/badge/Discord-Rejoindre-5865F2?logo=discord&logoColor=white)](https://discord.gg/EdUCjVHZfd)
+JoRoz Textures
+JoRoz Textures
+40 en ligne
+323 membres
+depuis mars 2026
 
-https://discord.gg/EdUCjVHZfd
+Aller sur le serveur
