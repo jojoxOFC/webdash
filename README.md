@@ -1,7 +1,8 @@
 ![Web Dash](./logo.png)
 
 Web Dash
-🌐 Site officiel
+
+🌐 Game Direct Link
 
 💬 [![Discord](https://img.shields.io/badge/Discord-Rejoindre-5865F2?logo=discord&logoColor=white)](https://discord.gg/EdUCjVHZfd)
 JoRoz Textures
