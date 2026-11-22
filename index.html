@@ -53,7 +53,6 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 #panel input[type=checkbox]{width:22px;height:22px;margin:0;flex:none}
 #panel input[type=range]{width:100%}
 #panel select{font-size:14px;max-width:140px;padding:4px}
-/* ===== Mode PC (clavier + souris) ===== */
 body.pc #joy,body.pc #jump,body.pc #cam{display:none}
 body.pc #panel .tch{display:none}
 body:not(.pc) #panel .pcs{display:none}
@@ -115,7 +114,6 @@ body.pc #punch::after,body.pc #taunt::after{content:attr(data-key);position:abso
 <div id="punch">PUNCH</div>
 <div id="taunt">!</div>
 <div id="jump">JUMP</div>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
@@ -127,8 +125,6 @@ document.body.prepend(renderer.domElement);
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(65,1,0.1,200);
 const net={on:false,role:'',rtt:0,owd:0,send(){},hello(){}};
-
-// Plateforme violette + quadrillage noir
 const c=document.createElement('canvas');c.width=c.height=128;
 const g=c.getContext('2d');g.fillStyle='#8a2be2';g.fillRect(0,0,128,128);
 g.strokeStyle='#000';g.lineWidth=8;g.strokeRect(0,0,128,128);
@@ -139,8 +135,6 @@ const side=new THREE.MeshBasicMaterial({color:0x4b1a8a});
 const top=new THREE.MeshBasicMaterial({map:tex});
 const plat=new THREE.Mesh(new THREE.BoxGeometry(H*2,1,H*2),[side,side,top,side,side,side]);
 plat.position.y=-0.5;scene.add(plat);
-
-// Barrières laser sur deux bords parallèles
 const LM=new THREE.MeshBasicMaterial({color:0xff2a2a});
 const LP=new THREE.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0.16,side:THREE.DoubleSide,depthWrite:false});
 const LPost=new THREE.MeshLambertMaterial({color:0x333333});
@@ -151,13 +145,9 @@ const beamG=new THREE.BoxGeometry(0.08,0.08,H*2),planeG=new THREE.PlaneGeometry(
   const pl=new THREE.Mesh(planeG,LP);pl.rotation.y=Math.PI/2;pl.position.set(x,2,0);scene.add(pl);
   [-1,1].forEach(j=>{const po=new THREE.Mesh(postG,LPost);po.position.set(x,2.1,j*H);scene.add(po);});
 });
-
 scene.add(new THREE.AmbientLight(0xffffff,0.75));
 const sun=new THREE.DirectionalLight(0xffffff,0.6);sun.position.set(3,8,5);scene.add(sun);
-// décor statique : plus de recalcul de matrice à chaque frame
 scene.traverse(o=>{if(o.isMesh){o.updateMatrix();o.matrixAutoUpdate=false;}});
-
-// Boxeur (formes carrées)
 const BOX=new THREE.BoxGeometry(1,1,1),CONE=new THREE.ConeGeometry(1,1,4),CYL=new THREE.CylinderGeometry(1,1,1,16);
 const OUT=new THREE.MeshBasicMaterial({color:0x000000,side:THREE.BackSide});
 const PAL={
@@ -214,7 +204,6 @@ function makeBoxer(P,noAdd){
   const dot=add(CYL,bl,0.2,1.36,0.395,0.1,0.02,0.1,0,1);dot.rotation.x=Math.PI/2;
   if(!P.noaid){const aid=add(BOX,ba,-0.17,1.7,0.395,0.2,0.07,0.02,0,1);aid.rotation.z=0.45;}
   [[-0.3,-0.05],[0,0.1],[0.3,0]].forEach(s=>{const c=add(CONE,sp,s[0],2.07,s[1],0.07,0.14,0.07,0,1);c.rotation.z=-s[0]*1.2;});
-  // les pièces du boxeur ne bougent pas entre elles (seuls les groupes bougent) : on fige leurs matrices
   tilt.traverse(o=>{if(o.isMesh){o.updateMatrix();o.matrixAutoUpdate=false;}});
   const root=new THREE.Group();root.add(tilt);if(!noAdd)scene.add(root);
   return {root,tilt,armL:tilt.userData.L,armR:tilt.userData.R,legL:tilt.userData.LL,legR:tilt.userData.RL};
@@ -247,8 +236,6 @@ function setTone(t){
   buildMe();net.hello();
   try{localStorage.setItem('wd-tones',JSON.stringify(tones));}catch(_){}
 }
-
-// Bulle de punch
 const bc=document.createElement('canvas');bc.width=bc.height=128;
 (function(){
   const b=bc.getContext('2d');
@@ -274,8 +261,6 @@ const tc=document.createElement('canvas');tc.width=tc.height=128;
 })();
 const tauntBubble=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(tc),transparent:true,depthWrite:false}));
 tauntBubble.visible=false;scene.add(tauntBubble);
-
-// Langues
 const I18N={
   en:{jump:'JUMP',punch:'PUNCH',lang:'Language',nocd:'Disable punch cooldown',bots:'Bots enabled',sj:'Joystick size',sb:'Jump button size',sp:'Punch button size',vol:'SFX volume',set:'Settings'},
   fr:{jump:'SAUT',punch:'COUP',lang:'Langue',nocd:'Désactiver le cooldown du punch',bots:'Bots activés',sj:'Taille du joystick',sb:'Taille du bouton saut',sp:'Taille du bouton coup',vol:'Volume des SFX',set:'Paramètres'},
@@ -309,16 +294,14 @@ he:{ctl:'שליטה',cauto:'אוטו׳',cpc:'מחשב',ctch:'מגע',keys:'מק�
 };
 for(const k in X_)Object.assign(I18N[k],X_[k],{noblk:NB_[k]},L_[k],{skintone:TN_[k],mapcol:MC_[k]},PC_[k]);
 const NT_={
-en:{nb:'ONLINE',nt:'Play online',nn:'Nickname',np:'Your nickname',nh:'Create a game',nj_l:'or join your friend',nc:'CODE',nj:'Join',nq:'Leave game',w8:'Give this code to your friend and wait…',cr:'Creating…',cn:'Connecting…',nocode:'Enter your friend’s code.',nf:'Code not found.',er:'Error: ',lf:'Your friend left.',dc:'Disconnected.',nop:'PeerJS not loaded (internet?).',pl:'Player'},
-fr:{nb:'EN LIGNE',nt:'Jouer en ligne',nn:'Pseudo',np:'Ton pseudo',nh:'Créer une partie',nj_l:'ou rejoindre ton ami',nc:'CODE',nj:'Rejoindre',nq:'Quitter la partie',w8:'Donne ce code à ton ami et attends…',cr:'Création…',cn:'Connexion…',nocode:'Entre le code de ton ami.',nf:'Code introuvable.',er:'Erreur : ',lf:'Ton ami est parti.',dc:'Déconnecté.',nop:'PeerJS non chargé (internet ?).',pl:'Joueur'},
-es:{nb:'EN LÍNEA',nt:'Jugar en línea',nn:'Apodo',np:'Tu apodo',nh:'Crear partida',nj_l:'o únete a tu amigo',nc:'CÓDIGO',nj:'Unirse',nq:'Salir de la partida',w8:'Dale este código a tu amigo y espera…',cr:'Creando…',cn:'Conectando…',nocode:'Introduce el código de tu amigo.',nf:'Código no encontrado.',er:'Error: ',lf:'Tu amigo se ha ido.',dc:'Desconectado.',nop:'PeerJS no cargado (¿internet?).',pl:'Jugador'},
-pl:{nb:'ONLINE',nt:'Graj online',nn:'Pseudonim',np:'Twój pseudonim',nh:'Utwórz grę',nj_l:'lub dołącz do kolegi',nc:'KOD',nj:'Dołącz',nq:'Opuść grę',w8:'Podaj ten kod koledze i poczekaj…',cr:'Tworzenie…',cn:'Łączenie…',nocode:'Wpisz kod kolegi.',nf:'Nie znaleziono kodu.',er:'Błąd: ',lf:'Twój kolega wyszedł.',dc:'Rozłączono.',nop:'Nie załadowano PeerJS (internet?).',pl:'Gracz'},
-ru:{nb:'ОНЛАЙН',nt:'Играть онлайн',nn:'Ник',np:'Твой ник',nh:'Создать игру',nj_l:'или присоединись к другу',nc:'КОД',nj:'Войти',nq:'Выйти из игры',w8:'Дай этот код другу и жди…',cr:'Создание…',cn:'Подключение…',nocode:'Введи код друга.',nf:'Код не найден.',er:'Ошибка: ',lf:'Твой друг вышел.',dc:'Отключено.',nop:'PeerJS не загружен (интернет?).',pl:'Игрок'},
-pt:{nb:'ONLINE',nt:'Jogar online',nn:'Apelido',np:'Seu apelido',nh:'Criar partida',nj_l:'ou entre com seu amigo',nc:'CÓDIGO',nj:'Entrar',nq:'Sair da partida',w8:'Passe este código ao seu amigo e aguarde…',cr:'Criando…',cn:'Conectando…',nocode:'Digite o código do seu amigo.',nf:'Código não encontrado.',er:'Erro: ',lf:'Seu amigo saiu.',dc:'Desconectado.',nop:'PeerJS não carregado (internet?).',pl:'Jogador'},
-he:{nb:'אונליין',nt:'משחק אונליין',nn:'כינוי',np:'הכינוי שלך',nh:'צור משחק',nj_l:'או הצטרף לחבר',nc:'קוד',nj:'הצטרף',nq:'עזוב משחק',w8:'תן את הקוד לחבר וחכה…',cr:'יוצר…',cn:'מתחבר…',nocode:'הכנס את הקוד של החבר.',nf:'הקוד לא נמצא.',er:'שגיאה: ',lf:'החבר עזב.',dc:'מנותק.',nop:'PeerJS לא נטען (אינטרנט?).',pl:'שחקן'}};
+en:{nb:'ONLINE',nt:'Play online',nn:'Nickname',np:'Your nickname',nh:'Create a game',nj_l:'or join your friend',nc:'CODE',nj:'Join',nq:'Leave game',w8:'Give this code to your friend and wait…',cr:'Creating…',cn:'Connecting…',nocode:'Enter your friend’s code.',nf:'Code not found.',er:'Error: ',lf:'Your friend left.',dc:'Disconnected.',wk:'Waking up the server (up to 1 min)…',sf:'Server unreachable.',rf:'Room is full.',pl:'Player'},
+fr:{nb:'EN LIGNE',nt:'Jouer en ligne',nn:'Pseudo',np:'Ton pseudo',nh:'Créer une partie',nj_l:'ou rejoindre ton ami',nc:'CODE',nj:'Rejoindre',nq:'Quitter la partie',w8:'Donne ce code à ton ami et attends…',cr:'Création…',cn:'Connexion…',nocode:'Entre le code de ton ami.',nf:'Code introuvable.',er:'Erreur : ',lf:'Ton ami est parti.',dc:'Déconnecté.',wk:'Réveil du serveur (jusqu’à 1 min)…',sf:'Serveur injoignable.',rf:'La partie est pleine.',pl:'Joueur'},
+es:{nb:'EN LÍNEA',nt:'Jugar en línea',nn:'Apodo',np:'Tu apodo',nh:'Crear partida',nj_l:'o únete a tu amigo',nc:'CÓDIGO',nj:'Unirse',nq:'Salir de la partida',w8:'Dale este código a tu amigo y espera…',cr:'Creando…',cn:'Conectando…',nocode:'Introduce el código de tu amigo.',nf:'Código no encontrado.',er:'Error: ',lf:'Tu amigo se ha ido.',dc:'Desconectado.',wk:'Despertando el servidor (hasta 1 min)…',sf:'Servidor inaccesible.',rf:'La partida está llena.',pl:'Jugador'},
+pl:{nb:'ONLINE',nt:'Graj online',nn:'Pseudonim',np:'Twój pseudonim',nh:'Utwórz grę',nj_l:'lub dołącz do kolegi',nc:'KOD',nj:'Dołącz',nq:'Opuść grę',w8:'Podaj ten kod koledze i poczekaj…',cr:'Tworzenie…',cn:'Łączenie…',nocode:'Wpisz kod kolegi.',nf:'Nie znaleziono kodu.',er:'Błąd: ',lf:'Twój kolega wyszedł.',dc:'Rozłączono.',wk:'Budzenie serwera (do 1 min)…',sf:'Serwer niedostępny.',rf:'Pokój jest pełny.',pl:'Gracz'},
+ru:{nb:'ОНЛАЙН',nt:'Играть онлайн',nn:'Ник',np:'Твой ник',nh:'Создать игру',nj_l:'или присоединись к другу',nc:'КОД',nj:'Войти',nq:'Выйти из игры',w8:'Дай этот код другу и жди…',cr:'Создание…',cn:'Подключение…',nocode:'Введи код друга.',nf:'Код не найден.',er:'Ошибка: ',lf:'Твой друг вышел.',dc:'Отключено.',wk:'Просыпается сервер (до 1 мин)…',sf:'Сервер недоступен.',rf:'Комната заполнена.',pl:'Игрок'},
+pt:{nb:'ONLINE',nt:'Jogar online',nn:'Apelido',np:'Seu apelido',nh:'Criar partida',nj_l:'ou entre com seu amigo',nc:'CÓDIGO',nj:'Entrar',nq:'Sair da partida',w8:'Passe este código ao seu amigo e aguarde…',cr:'Criando…',cn:'Conectando…',nocode:'Digite o código do seu amigo.',nf:'Código não encontrado.',er:'Erro: ',lf:'Seu amigo saiu.',dc:'Desconectado.',wk:'Acordando o servidor (até 1 min)…',sf:'Servidor inacessível.',rf:'A partida está cheia.',pl:'Jogador'},
+he:{nb:'אונליין',nt:'משחק אונליין',nn:'כינוי',np:'הכינוי שלך',nh:'צור משחק',nj_l:'או הצטרף לחבר',nc:'קוד',nj:'הצטרף',nq:'עזוב משחק',w8:'תן את הקוד לחבר וחכה…',cr:'יוצר…',cn:'מתחבר…',nocode:'הכנס את הקוד של החבר.',nf:'הקוד לא נמצא.',er:'שגיאה: ',lf:'החבר עזב.',dc:'מנותק.',wk:'מעיר את השרת (עד דקה)…',sf:'השרת לא זמין.',rf:'החדר מלא.',pl:'שחקן'}};
 for(const k in NT_)Object.assign(I18N[k],NT_[k]);
-
-// SFX simples (pas de musique)
 let ac=null,nbuf=null;
 function initAudio(){
   if(ac){if(ac.state==='suspended')ac.resume();return;}
@@ -356,8 +339,6 @@ function sfx(n){
     case 'shock':noise(0.5,3200,400,0.55);tone(120,40,0.5,'sawtooth',0.18);tone(1400,200,0.35,'square',0.08);break;
   }
 }
-
-// État
 let blocksOn=true,noCd=false,sfxVol=1,botsOn=true,T=I18N.en,master=null,camSens=1,taunting=false,tauntCd=0,tauntQ=false,invT=0,runA=0,runPh=0,tauntS=0,kbT=0,spkT=0,tauntT=0,ride=null,kbSpin=false,coy=0,tauntKeep=0,keepFx=false,hudAct=false,hudKeep=false;
 let px=0,py=0,pz=0,vx=0,vz=0,vy=0,ang=0;
 let grounded=true,dashUsed=false,dashT=0,jumpQ=false;
@@ -366,8 +347,6 @@ let punchQ=false,punchT=0,punchCd=0,hitDone=true,punchRight=true,bubbleT=0;
 let yaw=0,pitch=0.45;const DIST=9;
 const camT=new THREE.Vector3(0,1,0);
 const joy={x:0,y:0};
-
-// Bots : un qui saute, un immobile
 const bots=[{x:-3.5,z:-6,jumps:true},{x:3.5,z:-6,jumps:false}].map(o=>({hx:o.x,hz:o.z,x:o.x,y:0,z:o.z,vx:0,vy:0,vz:0,hit:0,sc:0,dead:0,spT:0,fx:false,g:true,jumps:o.jumps,m:makeBoxer(PAL.bot)}));
 function botDie(b){
   b.x=Math.max(-(H-0.45),Math.min(H-0.45,b.x));
@@ -376,13 +355,12 @@ function botDie(b){
 }
 function botRespawn(b){b.x=b.hx;b.z=b.hz;b.y=0;b.vx=b.vy=b.vz=0;b.hit=0;b.dead=0;b.g=true;}
 const live=()=>net.on?[rp]:(botsOn?bots:[]);
-// ===== Multijoueur P2P (PeerJS) : un hôte crée un code, l'ami le saisit =====
 let myName='';try{myName=localStorage.getItem('wd-name')||'';}catch(_){}
 const rp={net:1,x:0,y:0,z:0,vx:0,vy:0,vz:0,hit:0,dead:0,sc:0,g:true,tx:0,ty:0,tz:0,ta:0,a:0,ph:0,ra:0,pt:0,pr:false,p:0,pp:0,u:0,k:0,lt:0,b:0,tn:0,rb:0,rt:0,name:'',m:makeBoxer(PAL.bot),tag:null};
 rp.m.root.visible=false;
 const mkBub=c=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));sp.visible=false;scene.add(sp);return sp;};
 rp.bub=mkBub(bc);rp.tb=mkBub(tc);
-let peer=null,conn=null;
+let ws=null,netCode='';const SERVER='wss://webdash-server.onrender.com';
 function mkTag(txt,col){
   const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');
   g.font='700 30px system-ui,Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=6;g.strokeStyle='#000';g.fillStyle=col||'#fff';
@@ -396,7 +374,7 @@ function setRemote(name,skin,tone){
   if(rp.tag){scene.remove(rp.tag);rp.tag.material.map.dispose();rp.tag.material.dispose();}
   rp.name=name;rp.tag=mkTag(name);
 }
-net.send=m=>{if(conn&&conn.open){try{conn.send(m);}catch(_){}}};
+net.send=m=>{if(ws&&ws.readyState===1&&net.on){try{ws.send(JSON.stringify(m));}catch(_){}}};
 let meTag=null,meTagN='';
 function updateMeTag(){const n=myName||T.pl;if(meTag&&n===meTagN)return;if(meTag){scene.remove(meTag);meTag.material.map.dispose();meTag.material.dispose();}meTag=mkTag(n,'#ffd23f');meTagN=n;}
 net.hello=()=>{updateMeTag();net.send({t:'h',n:myName||T.pl,s:skinId,c:tones[skinId]||null});};
@@ -404,13 +382,18 @@ const netStatus=t=>{document.getElementById('netst').textContent=t;};
 function netUi(){updateMeTag();const b=document.getElementById('netbtn');b.classList.toggle('on',net.on);b.textContent=net.on?T.nb+' ● '+(net.rtt?Math.round(net.rtt)+'ms':''):T.nb;}
 function startMatch(){clearBlocks();bid=0;spawnT=3;lastPat=-1;respawn();}
 function netReset(){
-  const c=conn;conn=null;if(c){try{c.close();}catch(_){}}
-  if(peer){try{peer.destroy();}catch(_){}}peer=null;
+  const w=ws;ws=null;if(w){try{w.close();}catch(_){}}
   net.on=false;net.role='';rp.m.root.visible=false;if(rp.tag)rp.tag.visible=false;netUi();
 }
 function onNet(m){
   if(!m)return;
   switch(m.t){
+    case 'ok':document.getElementById('netcode').textContent=netCode;netStatus(T.w8);break;
+    case 'tk':if(net.role==='host')sendCreate();break;
+    case 'nf':netReset();netStatus(T.nf);break;
+    case 'fl':netReset();netStatus(T.rf);break;
+    case 'pr':netOpened();break;
+    case 'lf':if(net.on)netBye(T.lf);break;
     case 'h':setRemote(String(m.n||T.pl).slice(0,16),m.s,m.c);break;
     case 'g':startMatch();break;
     case 'sp':if(CUSTOM[m.i]){const n0=blocks.length;spawnCustom(CUSTOM[m.i],m.f,m.c);const dz=BSPEED*net.owd;for(let i=n0;i<blocks.length;i++){const b=blocks[i];b.z+=dz;for(const q of b.ms)q.position.z=b.z;}}break;
@@ -429,31 +412,40 @@ function onNet(m){
       rp.dead=d;break;}
   }
 }
-function netOpen(c,role){
-  conn=c;net.role=role;
-  const opened=()=>{net.on=true;net.hello();net.send({t:'pi',n:performance.now()});if(role==='host'){startMatch();net.send({t:'g'});}netStatus('');document.getElementById('netp').hidden=true;netUi();};
-  if(c.open)opened();else c.on('open',opened);
-  c.on('data',onNet);
-  const bye=()=>{if(conn!==c)return;conn=null;net.on=false;net.role='';rp.m.root.visible=false;if(rp.tag)rp.tag.visible=false;clearBlocks();spawnT=3;netStatus(T.lf);netUi();document.getElementById('netp').hidden=false;};
-  c.on('close',bye);c.on('error',bye);
+function netOpened(){
+  net.on=true;net.hello();net.send({t:'pi',n:performance.now()});
+  if(net.role==='host'){startMatch();net.send({t:'g'});}
+  netStatus('');document.getElementById('netp').hidden=true;netUi();
+}
+function netBye(msg){
+  netReset();clearBlocks();spawnT=3;netStatus(msg);document.getElementById('netp').hidden=false;
+}
+function wsConnect(first,tries){
+  netStatus(T.wk);
+  let opened=false;
+  const w=new WebSocket(SERVER);ws=w;
+  w.onopen=()=>{opened=true;netStatus(T.cn);first();};
+  w.onmessage=e=>{if(w!==ws)return;let m;try{m=JSON.parse(e.data);}catch(_){return;}onNet(m);};
+  w.onclose=()=>{
+    if(w!==ws)return;
+    if(net.on){netBye(T.lf);return;}
+    if(!opened&&tries<15){setTimeout(()=>{if(w===ws)wsConnect(first,tries+1);},4000);return;}
+    ws=null;netStatus(T.sf);
+  };
+}
+function sendCreate(){
+  netCode=Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[rnd(32)]).join('');
+  ws.send(JSON.stringify({t:'cr',c:netCode}));
 }
 function hostGame(){
-  if(typeof Peer==='undefined'){netStatus(T.nop);return;}
-  netReset();netStatus(T.cr);
-  const code=Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[rnd(32)]).join('');
-  peer=new Peer('wdash-'+code);
-  peer.on('open',()=>{document.getElementById('netcode').textContent=code;netStatus(T.w8);});
-  peer.on('connection',c=>{if(conn&&conn.open){c.close();return;}netOpen(c,'host');});
-  peer.on('error',e=>{if(e.type==='unavailable-id')hostGame();else netStatus(T.er+e.type);});
+  netReset();net.role='host';
+  wsConnect(sendCreate,0);
 }
 function joinGame(){
-  if(typeof Peer==='undefined'){netStatus(T.nop);return;}
   const code=document.getElementById('netin').value.trim().toUpperCase();
   if(code.length<4){netStatus(T.nocode);return;}
-  netReset();netStatus(T.cn);
-  peer=new Peer();
-  peer.on('open',()=>netOpen(peer.connect('wdash-'+code),'guest'));
-  peer.on('error',e=>netStatus(e.type==='peer-unavailable'?T.nf:T.er+e.type));
+  netReset();net.role='guest';
+  wsConnect(()=>ws.send(JSON.stringify({t:'jn',c:code})),0);
 }
 function renderRemote(dt){
   const r=rp,m=r.m,on=net.on;
@@ -479,8 +471,6 @@ function renderRemote(dt){
   const q=r.pt>0?Math.sin(Math.PI*(1-r.pt/PUNCH_DUR)):0,pa=r.pr?m.armR:m.armL;
   if(q>0){pa.rotation.x=-1.5*q;pa.position.z=0.3*q;}else{m.armL.position.z=0;m.armR.position.z=0;}
 }
-
-// Blocs à esquiver (style Block Dash de Stumble Guys : murs de cubes à 1 ou 2 étages, avec trous)
 const LH=1.4,BSPEED=6.5,COLS=14,CW=2*(H-0.45)/(COLS+0.6),X0=-(H-0.45)+0.3*CW,BD=2.5,RS=5.5,SPAWN_Z=-H-3;
 const KB_H=11,KB_V=10,KB_T=0.55,LINE=0.06,TAUNT_T=5,TAUNT_KEEP=2.5,TLAUNCH=Math.sqrt(2*G*5*LH),ghost=new Set();
 function mkTex(base,crack,studs){
@@ -500,13 +490,11 @@ const WC=[0x2f7bff,0xff3b8f,0xffc21f,0xb02cf0,0x4cc43a];
 const BCOL=WC.map(c=>new THREE.MeshLambertMaterial({color:c,map:CT}));
 const BCRK=WC.map(c=>new THREE.MeshLambertMaterial({color:c,map:CK}));
 const BSPK=new THREE.MeshLambertMaterial({color:0xffffff,map:SK});
-// Un seul mesh par rangée de blocs (au lieu d'un cube = un mesh) : beaucoup moins d'appels de rendu.
-// La texture est répétée n×lv fois pour garder le quadrillage des cubes.
 const WG={};
 function wallGeo(n,lv){
   const key=n*10+lv;if(WG[key])return WG[key];
   const g=new THREE.BoxGeometry(1,1,1),uv=g.attributes.uv;
-  const rep=[[1,lv],[1,lv],[n,1],[n,1],[n,lv],[n,lv]]; // faces BoxGeometry : +x,-x,+y,-y,+z,-z
+  const rep=[[1,lv],[1,lv],[n,1],[n,1],[n,lv],[n,lv]];
   for(let f=0;f<6;f++)for(let v=0;v<4;v++){const i=f*4+v;uv.setXY(i,uv.getX(i)*rep[f][0],uv.getY(i)*rep[f][1]);}
   return WG[key]=g;
 }
@@ -546,7 +534,6 @@ function breakBlock(bk){
 const blocks=[],falling=[];let spawnT=4,lastPat=-1,ci=0,bid=0;
 const rnd=n=>Math.floor(Math.random()*n);
 const RW=f=>Array.from({length:COLS},(_,i)=>f(i)|0);
-// Un bloc = une rangée de n colonnes sur lv étages à partir de l'étage l0 (0 = sol, 1 = étage du haut)
 function addBlk(i,n,l0,lv,kind,z){
   const mat=kind==='c'?BCRK[ci]:kind==='s'?BSPK:BCOL[ci],bx=X0+i*CW+n*CW/2,y0=l0*LH,ms=[];
   const m=free.pop();
@@ -556,7 +543,6 @@ function addBlk(i,n,l0,lv,kind,z){
   }
   blocks.push({id:bid++,x:bx,z,w:n*CW,d:BD,y0,h:y0+lv*LH,ms,crack:kind==='c',spike:kind==='s',n,lv,mat});
 }
-// t : 14 valeurs (0 vide, 1 bloc, 2 fissuré, 3 piques) ; les blocs fissurés ne sont jamais fusionnés
 function addRuns(t,l0,lv,z){
   let i=0;
   while(i<COLS){
@@ -566,7 +552,6 @@ function addRuns(t,l0,lv,z){
     i=j;
   }
 }
-// lo / hi : étage du bas et étage du haut (chaque étage fissuré se casse séparément)
 function mkRowLv(lo,hi,off){
   const z=SPAWN_Z-off,T=[],L=[],U=[];
   for(let i=0;i<COLS;i++){
@@ -575,15 +560,10 @@ function mkRowLv(lo,hi,off){
   }
   addRuns(T,0,2,z);addRuns(L,0,1,z);addRuns(U,1,1,z);
 }
-// anciens codes : 0 vide, 1 bas (sautable), 2 haut, 3 fissuré (cassable en dashant), 4 piques (solide)
 function mkRow(hs,off){
   mkRowLv(hs.map(c=>c===1||c===2?1:c===3?2:c===4?3:0),hs.map(c=>c===2?1:c===3?2:c===4?3:0),off);
 }
-// 9 patterns copiés des vidéos Block Dash (capture par capture)
-// 0 mur violet à piques | 1 mur jaune cassable | 2 piliers violets + mur | 3 mur bleu piques/bleu alternés | 4 mur rose "pique-fissure-pique"
-// 5 mur bleu piques + marches | 6 mur vert en L (piques + fissurés + long mur) | 7 mur rose très fissuré | 8 cubes jaunes 2x2 + mur fissuré
 const CI={blue:0,pink:1,yellow:2,purple:3,green:4};
-// Patterns du Pattern Creator 3D : colle ici les patterns exportés (un objet JSON par pattern)
 const D='..............',Z=n=>Array(n).fill(D);
 const CUSTOM=[
 {mirror:true,lo:["BB....BB....BB","BB....BB....BB",D,"BBBBBBBBBBBBBB","BBBBBBBBBBBBBB",D,D],hi:[D,D,D,"BBBBBBBBBBBBBB","BBBBBBBBBBBBBB",D,D]},
@@ -593,13 +573,11 @@ const CUSTOM=[
 {mirror:true,lo:["B.B.B.B.B.B.B.",D,"B.B.B.B.B.B.B.",D,"BBBBBBBBBBBBBB",...Z(5)],hi:[D,D,"B.B.B.B.B.B.B.",D,"BBBBBBBBBBBBBB",...Z(5)],up:[[D,D,D,D,"BSSSBBBBBBSSSB",...Z(5)]]},
 {mirror:true,lo:[D,D,"SCSBSBSBSCSBSB",...Z(7)],hi:[D,D,"SBSBSCSBSCSBSC",...Z(7)]}
 ];
-// Patterns de test envoyés par le bouton « Tester dans le jeu » du Pattern Creator (même navigateur / même site)
 const TESTP=[];
 try{
   const ct=JSON.parse(localStorage.getItem('wd-test-patterns')||'[]');
   if(Array.isArray(ct))for(const p of ct)if(p&&Array.isArray(p.lo)&&Array.isArray(p.hi)&&p.lo.length<=40&&p.hi.length<=40)TESTP.push(p);
 }catch(_){}
-// N étages : les blocs identiques (non fissurés) se collent à la verticale puis à l'horizontale
 function mkRowN(Ls,off){
   const z=SPAWN_Z-off,N=Ls.length,runs=[];
   for(let l=0;l<N;l++)runs[l]=Array(COLS).fill(null);
@@ -615,7 +593,7 @@ function mkRowN(Ls,off){
       addBlk(i,j-i,l,r.lv,r.c===2?'c':r.c===3?'s':'n',z);i=j;}}
 }
 function spawnCustom(p,flip,col){
-  ci=col!==undefined?col:rnd(5); // couleur aléatoire à chaque vague
+  ci=col!==undefined?col:rnd(5);
   const fl=flip!==undefined?flip:p.mirror!==false&&Math.random()<0.5,Ls=[p.lo,p.hi].concat(p.up||[]),n=Math.max(1,...Ls.map(a=>(a||[]).length));
   const dec=s=>{const a=Array.from({length:COLS},(_,i)=>({B:1,C:2,S:3}[(s||'')[i]]||0));return fl?a.reverse():a;};
   for(let r=0;r<n;r++)mkRowN(Ls.map(a=>dec((a||[])[r])),r*BD);
@@ -643,7 +621,6 @@ function updateBlocks(dt){
     for(const m of b.ms)m.position.z=b.z;
     if(b.z>=H&&b.hang===undefined)b.hang=HANG_T;
     if(b.hang!==undefined&&(b.hang-=dt)<=0){
-      // bout de la map : le bloc ne disparaît plus, il tombe dans le vide
       if(ride===b)ride=null;
       ghost.delete(b);blocks.splice(i,1);
       falling.push({ms:b.ms,by:b.ms.map(m=>m.position.y),z:b.z,vy:0,dy:0});
@@ -659,14 +636,12 @@ function updateBlocks(dt){
 function blockPush(o,r,dash,pl){
   if(o.y<-1.9)return;
   for(let bi=0;bi<blocks.length;bi++){const bk=blocks[bi];
-    // un bloc d'étage haut (y0>0) ne touche que ce qui est à son niveau : on casse l'étage visé, pas l'autre
     if(o.y>=bk.h||(bk.y0>0&&o.y<bk.y0-0.05))continue;
     const ox=bk.w/2+r-Math.abs(o.x-bk.x),oz=bk.d/2+r-Math.abs(o.z-bk.z);
     if(ox<=0||oz<=0){if(pl)ghost.delete(bk);continue;}
     if(bk.crack&&dash){breakBlock(bk);net.send({t:'br',id:bk.id});blocks.splice(bi,1);bi--;ghost.delete(bk);sfx('break');continue;}
     if(pl){
       if(ghost.has(bk))continue;
-      // dash dans le bord / une ligne du bloc : on le traverse
       if(dash&&Math.abs(o.vz)>Math.abs(o.vx)){
         const n=bk.w/CW,rel=(o.x-(bk.x-bk.w/2))/CW;let e;
         if(rel<0)e=-rel*CW;else if(rel>n)e=(rel-n)*CW;else{const f=rel%1;e=Math.min(f,1-f)*CW;}
@@ -682,22 +657,17 @@ function blockPush(o,r,dash,pl){
     }
   }
 }
-// Piques : knockback comme le punch, ou propulsion à 5 blocs de haut en mode taunt
-// fwd = on a dashé dans les piques : on est projeté vers l'avant (à travers le bloc) et pas vers l'arrière
 function spikeHit(bk,nx,nz,top,fwd){
   spkT=0.4;sfx('hit');ride=null;grounded=false;
-  // le bump taunt reste actif TAUNT_KEEP secondes après la fin du taunt
   if(taunting||tauntKeep>0){vy=TLAUNCH;dashT=0;return;}
   if(fwd)ghost.add(bk);
   if(top){const dx=px-bk.x,dz=pz-bk.z,l=Math.hypot(dx,dz);nx=l>0.01?dx/l:0;nz=l>0.01?dz/l:1;}
   vx=nx*KB_H;vz=nz*KB_H;vy=KB_V;kbT=KB_T;dashT=0;punchT=0;
 }
-
 function respawn(){
   deadT=0;px=0;py=0;pz=0;vx=vy=vz=0;grounded=true;dashUsed=false;dashT=0;jumpQ=false;punchQ=false;punchT=0;bubbleT=0;
   taunting=false;tauntKeep=0;kbT=0;spkT=0;tauntT=0;ride=null;ghost.clear();invT=1.5;yaw=0;pitch=0.45;camT.set(0,1,0);sfx('zap');
 }
-
 function doHit(){
   const fx=Math.sin(ang),fz=Math.cos(ang);let any=false;
   for(const b of live()){
@@ -710,7 +680,6 @@ function doHit(){
   }
   if(any)sfx('hit');
 }
-
 function startDeath(){
   px=Math.max(-(H-0.45),Math.min(H-0.45,px));
   deadT=DEAD_DUR;sparkT=0;vx=vy=vz=0;ride=null;taunting=false;tauntKeep=0;dashT=0;punchT=0;kbT=0;bubbleT=0;
@@ -731,7 +700,6 @@ function step(dt){
   const sy=Math.sin(yaw),cy=Math.cos(yaw);
   const dx=cy*joy.x-sy*joy.y, dz=-sy*joy.x-cy*joy.y;
   const mag=Math.hypot(dx,dz);
-
   if(jumpQ){
     jumpQ=false;
     if(kbT>0){}
@@ -743,7 +711,6 @@ function step(dt){
       dashUsed=true;dashT=DASH_T;ang=Math.atan2(ddx,ddz);punchT=0;sfx('dash');
     }
   }
-
   punchCd-=dt;bubbleT=Math.max(0,bubbleT-dt);tauntCd=Math.max(0,tauntCd-dt);invT=Math.max(0,invT-dt);kbT=Math.max(0,kbT-dt);spkT=Math.max(0,spkT-dt);tauntKeep=Math.max(0,tauntKeep-dt);
   if(tauntQ){
     tauntQ=false;
@@ -766,7 +733,6 @@ function step(dt){
     punchT-=dt;
     if(!hitDone&&punchT<PUNCH_DUR*0.6){hitDone=true;doHit();}
   }
-
   const wasDash=dashT>0;
   if(dashT>0){
     dashT-=dt;vy-=G*0.15*dt;
@@ -776,11 +742,9 @@ function step(dt){
     if(!(kbT>0&&!grounded)){const ctl=!taunting&&kbT<=0;vx+=((ctl?dx*SPEED:0)-vx)*k;vz+=((ctl?dz*SPEED:0)-vz)*k;}
     vy-=G*dt;
   }
-
   if(taunting&&!grounded){vx=0;vz=0;}
   const prevY=py;
   px+=vx*dt;pz+=vz*dt;py+=vy*dt;
-
   let landed=false;
   if(vy<=0&&prevY>=-0.001&&py<=0&&Math.abs(px)<=H+0.15&&Math.abs(pz)<=H+0.15){
     const iv=vy;py=0;vy=0;landed=true;
@@ -812,17 +776,13 @@ function step(dt){
   }
   if(!landed)grounded=false;
   if(grounded)coy=0.25;else coy=Math.max(0,coy-dt);
-
   if(py<0&&py>-1){
     const ox=H+R-Math.abs(px),oz=H+R-Math.abs(pz);
     if(ox>0&&oz>0){
       if(ox<oz){px+=Math.sign(px||1)*ox;vx=0;}else{pz+=Math.sign(pz||1)*oz;vz=0;}
     }
   }
-
   if(invT<=0){const o={x:px,y:py,z:pz,vx:vx,vz:vz,sp:null,nx:0,nz:0,spk:true};blockPush(o,R,wasDash,true);px=o.x;pz=o.z;vx=o.vx;vz=o.vz;if(o.sp&&spkT<=0){if(wasDash)spikeHit(o.sp,Math.sin(ang),Math.cos(ang),false,true);else spikeHit(o.sp,o.nx,o.nz,false);}}
-
-  // poussée des bots avec le corps
   for(const b of live()){
     if(b.dead>0)continue;
     const sdx=b.x-px,sdz=b.z-pz,sd=Math.hypot(sdx,sdz);
@@ -833,10 +793,7 @@ function step(dt){
       if(dv>0){b.vx+=nx*dv*0.9;b.vz+=nz*dv*0.9;}
     }
   }
-
-  // laser ou vide : respawn
-  if(py<VOID_Y)respawn();else if(Math.abs(px)+0.3>H-0.15&&py<4&&Math.abs(pz)<H-0.15)startDeath(); // les poteaux noirs au bout des lasers ne tuent pas
-
+  if(py<VOID_Y)respawn();else if(Math.abs(px)+0.3>H-0.15&&py<4&&Math.abs(pz)<H-0.15)startDeath();
   if(dashT<=0){
     if(Math.hypot(vx,vz)>0.6&&punchT<=0&&!taunting){
       const t=Math.atan2(vx,vz);
@@ -844,9 +801,7 @@ function step(dt){
       ang+=d*(1-Math.exp(-18*dt));
     }
   }
-
   }
-  // bots
   for(const b of live()){
     if(b.net)continue;
     if(b.dead>0){
@@ -869,7 +824,6 @@ function step(dt){
     if(b.y<VOID_Y)botRespawn(b);else if(Math.abs(b.x)+0.3>H-0.15&&b.y<4&&Math.abs(b.z)<H-0.15)botDie(b);
   }
 }
-
 function flashBoxer(m,c){m.root.traverse(o=>{const mt=o.material;if(mt&&mt.emissive)mt.emissive.setHex(c);});}
 function flashMe(c){flashBoxer(me,c);}
 let lastCd=-1,lastProg=-1,lastTP=-1,lastTC=-1;
@@ -904,7 +858,6 @@ function render(dt){
   }else if(deadFx){
     deadFx=false;flashMe(0);me.root.scale.setScalar(1);me.armL.rotation.z=-0.1;me.armR.rotation.z=0.1;
   }
-
   bots.forEach(b=>{b.m.root.visible=botsOn&&!net.on;});
   for(const b of live()){
     if(b.net)continue;
@@ -932,8 +885,6 @@ function render(dt){
   if(tauntS>0.02){const tsc=tauntS*1.25;tauntBubble.visible=true;tauntBubble.scale.set(tsc,tsc,1);tauntBubble.position.set(px,py+2.75,pz);}
   else tauntBubble.visible=false;
   if(meTag){meTag.visible=net.on&&deadT<=0;meTag.position.set(px,py+(bubble.visible||tauntBubble.visible?3.95:2.9),pz);}
-
-  // cooldown du bouton PUNCH
   const cdOn=!noCd&&punchCd>0;
   const cd=cdOn?Math.ceil(punchCd):0;
   const prog=cdOn?Math.round(punchCd/PUNCH_CD*50)/50:0;
@@ -946,8 +897,7 @@ function render(dt){
   const hKeep=!taunting&&tauntKeep>0;
   if(taunting!==hudAct){tauntEl.classList.toggle('act',taunting);hudAct=taunting;}
   if(hKeep!==hudKeep){tauntEl.classList.toggle('keep',hKeep);hudKeep=hKeep;}
-  if(deadT<=0&&hKeep!==keepFx){keepFx=hKeep;flashMe(hKeep?0x4a3a00:0);} // léger halo doré tant que le bump taunt est actif
-
+  if(deadT<=0&&hKeep!==keepFx){keepFx=hKeep;flashMe(hKeep?0x4a3a00:0);}
   const f=dashing?1:1-Math.exp(-14*dt);
   camT.x+=(px-camT.x)*f;camT.y+=(py+1-camT.y)*f;camT.z+=(pz-camT.z)*f;
   const cp=Math.cos(pitch);
@@ -955,15 +905,12 @@ function render(dt){
   camera.lookAt(camT);
   renderer.render(scene,camera);
 }
-
 function resize(){
   const w=innerWidth,h=innerHeight;
   renderer.setSize(w,h,false);
   camera.aspect=w/h;camera.updateProjectionMatrix();
 }
 addEventListener('resize',resize);addEventListener('orientationchange',resize);resize();
-
-// Contrôles tactiles
 const $=id=>document.getElementById(id);
 const joyEl=$('joy'),knob=$('knob'),camEl=$('cam'),jumpEl=$('jump'),punchEl=$('punch'),tauntEl=$('taunt');
 let jid=null,jcx=0,jcy=0;
@@ -987,7 +934,6 @@ joyEl.addEventListener('pointerdown',e=>{
 joyEl.addEventListener('pointermove',e=>{if(e.pointerId===jid)joyUpdate(e);});
 joyEl.addEventListener('pointerup',joyEnd);
 joyEl.addEventListener('pointercancel',joyEnd);
-
 let cid=null,lx=0,ly=0;
 camEl.addEventListener('pointerdown',e=>{
   if(cid!==null)return;
@@ -1002,7 +948,6 @@ camEl.addEventListener('pointermove',e=>{
 const camEnd=e=>{if(e.pointerId===cid)cid=null;};
 camEl.addEventListener('pointerup',camEnd);
 camEl.addEventListener('pointercancel',camEnd);
-
 punchEl.addEventListener('pointerdown',e=>{punchQ=true;punchEl.classList.add('on');punchEl.setPointerCapture(e.pointerId);});
 const punchEnd=()=>punchEl.classList.remove('on');
 punchEl.addEventListener('pointerup',punchEnd);
@@ -1015,10 +960,7 @@ jumpEl.addEventListener('pointerdown',e=>{jumpQ=true;jumpEl.classList.add('on');
 const jumpEnd=()=>jumpEl.classList.remove('on');
 jumpEl.addEventListener('pointerup',jumpEnd);
 jumpEl.addEventListener('pointercancel',jumpEnd);
-
 ['pointerdown','touchend','click','keydown'].forEach(t=>addEventListener(t,initAudio,{passive:true}));
-
-// ===== Contrôles PC : clavier + souris (touches modifiables) =====
 const DEF_BINDS={fwd:'z',left:'q',back:'s',right:'d',jump:' ',punch:'mouse0',taunt:'mouse2'};
 const ACTS=['fwd','left','back','right','jump','punch','taunt'];
 let binds=Object.assign({},DEF_BINDS),ctlMode='auto',pcOn=false,plFail=false,everLocked=false,capAct=null;
@@ -1076,7 +1018,6 @@ function listen(act){
   renderBinds();
 }
 $('kreset').addEventListener('click',()=>{binds=Object.assign({},DEF_BINDS);saveBinds();keys.clear();renderBinds();});
-
 function actDown(id){
   if(id===binds.jump){jumpQ=true;jumpEl.classList.add('on');}
   if(id===binds.punch){punchQ=true;punchEl.classList.add('on');}
@@ -1111,7 +1052,6 @@ function onUiToggle(){
 const mo=new MutationObserver(onUiToggle);
 mo.observe(uiPanel,{attributes:true,attributeFilter:['hidden']});
 mo.observe(uiLock,{attributes:true,attributeFilter:['hidden']});mo.observe($('netp'),{attributes:true,attributeFilter:['hidden']});
-
 function lockPointer(){
   const c=renderer.domElement;
   if(!c.requestPointerLock){plFail=true;updateHint();return;}
@@ -1123,7 +1063,6 @@ document.addEventListener('pointerlockchange',()=>{
   updateHint();
 });
 document.addEventListener('pointerlockerror',()=>{if(!everLocked)plFail=true;updateHint();});
-
 addEventListener('keydown',e=>{
   if(!pcOn||capAct!==null)return;
   if(e.key==='Escape'&&panelsOpen()){uiPanel.hidden=true;uiLock.hidden=true;$('netp').hidden=true;return;}
@@ -1161,8 +1100,6 @@ addEventListener('mousemove',e=>{
   pitch=Math.min(1.35,Math.max(0.08,pitch+(e.movementY||0)*0.0022*camSens));
 });
 addEventListener('blur',releaseAll);
-
-// Paramètres
 const $$=q=>document.querySelectorAll(q);
 const gear=$('gear'),panel=$('panel'),langEl=$('lang'),nocdEl=$('nocd'),noblkEl=$('noblk'),botsEl=$('bots'),sjEl=$('sj'),sbEl=$('sb'),spEl=$('sp'),stEl=$('st'),sensEl=$('sens'),volEl=$('vol'),ctlEl=$('ctl');
 function applyLang(){
@@ -1183,7 +1120,6 @@ function applySettings(){
   st.setProperty('--sj',sjEl.value);st.setProperty('--sb',sbEl.value);st.setProperty('--sp',spEl.value);st.setProperty('--st',stEl.value);camSens=parseFloat(sensEl.value)||1;ctlMode=ctlEl.value;applyMode();
   try{localStorage.setItem('wd-settings2',JSON.stringify({l:langEl.value,nocd:noCd,noblk:!blocksOn,bots:botsOn,sj:sjEl.value,sb:sbEl.value,sp:spEl.value,st:stEl.value,sens:sensEl.value,vol:volEl.value,ctl:ctlEl.value,map:mapId}));}catch(_){}
 }
-// Couleur de la plateforme
 const MAPS={purple:['#8a2be2','#000'],blue:['#2b6be2','#000'],green:['#2bbf4a','#000'],red:['#e22b2b','#000'],orange:['#ff8a1f','#000'],yellow:['#ffd21f','#000'],black:['#1a1a1a','#5a5a5a'],white:['#f2f2f2','#000']};
 let mapId='purple';
 function paintMap(){
@@ -1198,8 +1134,6 @@ function paintMap(){
     box.appendChild(b);
   }
 }
-
-// Casier (skins) avec aperçus 3D
 const lockEl=$('locker'),lockBtn=$('lockbtn'),lkGrid=$('lkgrid');
 const pscene=new THREE.Scene();pscene.background=new THREE.Color(0x2a2a3a);
 pscene.add(new THREE.AmbientLight(0xffffff,0.75));
@@ -1244,7 +1178,6 @@ function renderLocker(){
 lockBtn.addEventListener('click',()=>{panel.hidden=true;lockEl.hidden=false;renderLocker();});
 $('lkx').addEventListener('click',()=>{lockEl.hidden=true;});
 lockEl.addEventListener('click',e=>{if(e.target===lockEl)lockEl.hidden=true;});
-
 try{
   const st=JSON.parse(localStorage.getItem('wd-settings2')||'null');
   if(st){
@@ -1260,10 +1193,7 @@ langEl.addEventListener('change',()=>{applyLang();applySettings();});
 ctlEl.addEventListener('change',applySettings);
 [nocdEl,noblkEl,botsEl].forEach(e=>e.addEventListener('change',applySettings));
 [sjEl,sbEl,spEl,stEl,sensEl,volEl].forEach(e=>e.addEventListener('input',applySettings));
-
 document.addEventListener('contextmenu',e=>e.preventDefault());
-
-// Verrouillage paysage si possible
 let locked=false;
 addEventListener('pointerdown',async e=>{
   if(locked)return;
@@ -1276,8 +1206,6 @@ addEventListener('pointerdown',async e=>{
     if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape');
   }catch(_){}
 });
-
-// Bouton plein écran
 const fsBtn=$('fs'),de=document.documentElement;
 const fsReq=de.requestFullscreen||de.webkitRequestFullscreen,fsExit=document.exitFullscreen||document.webkitExitFullscreen;
 const inFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
@@ -1291,8 +1219,6 @@ fsBtn.addEventListener('click',async()=>{
     else{await fsReq.call(de);if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape');}
   }catch(_){}
 });
-
-// Boucle
 const fpsEl=$('fps');let fpsAcc=0,fpsN=0,dtS=1/60;
 let last=performance.now();
 function loop(now){
@@ -1301,14 +1227,12 @@ function loop(now){
   fpsAcc+=dt*1000;fpsN++;
   if(fpsAcc>=500){fpsEl.textContent=Math.round(fpsN*1000/fpsAcc)+' FPS';fpsAcc=0;fpsN=0;}
   if(dt>0.05)dt=0.05;
-  // lisse le jitter du timestamp rAF (±1 ms) : évite les micro-saccades à vitesse élevée
   if(Math.abs(dt-dtS)<dtS*0.4){dtS+=(dt-dtS)*0.08;dt=dtS;}else dtS=Math.max(dt,0.001);
   if(pcOn)kbJoy();
   const n=dt>0.025?2:1;
   for(let i=0;i<n;i++)step(dt/n);
   render(dt);
 }
-// UI en ligne
 {const np=$('netp'),nn=$('netname');nn.value=myName;
 $('netbtn').addEventListener('click',()=>{np.hidden=false;panel.hidden=true;lockEl.hidden=true;});
 $('nx').addEventListener('click',()=>{np.hidden=true;});
